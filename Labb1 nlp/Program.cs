@@ -26,11 +26,12 @@ namespace Labb1_nlp
 			//Read json
 			IConfigurationBuilder builder = new ConfigurationBuilder().AddJsonFile("appsettings.json");
 			IConfigurationRoot configuration = builder.Build();
+			//Configure json settings
 			Uri = configuration["ServiceQnaEndpoint"];
 			qnaSvcKey = configuration["ServiceQnaKey"];
 			cogSvcKey = configuration["CognitiveServiceKey"];
 			cogSvcRegion = configuration["CognitiveServiceRegion"];
-
+			//Set up speech config
 			speechConfig = SpeechConfig.FromSubscription(cogSvcKey, cogSvcRegion);
 			speechConfig.SpeechSynthesisVoiceName = "en-US-AriaNeural";
 			AzureKeyCredential qnaCredentials = new AzureKeyCredential(qnaSvcKey);
@@ -45,28 +46,68 @@ namespace Labb1_nlp
 
 			while (question.ToLower() != "quit")
 			{
-				Console.WriteLine("Ask me something");
+				
+				Console.WriteLine("Choose from three options:");
+				Console.WriteLine("1: Voice recognition");
+				Console.WriteLine("2: Write answer");
+				Console.WriteLine("3: Quit");
+				string options = Console.ReadLine();
 
-				//question = Console.ReadLine();
-				question = await TranscribeQuestionFromMic(question);
-				try
+				//Question speech
+				switch (options)
 				{
-					Response<AnswersResult> response = qnaClient.GetAnswers(question, project);
-					foreach (KnowledgeBaseAnswer answer in response.Value.Answers)
-					{
-						Console.WriteLine($"Q:{question}");
-						await TranscribeAnswer(answer.Answer);
+					case "1":
+						Console.WriteLine("Ask me something");
+						question = await TranscribeQuestionFromMic(question);
+						try
+						{
+							//Check if there is a response
+							Response<AnswersResult> response = qnaClient.GetAnswers(question, project);
+							foreach (KnowledgeBaseAnswer answer in response.Value.Answers)
+							{
+								Console.WriteLine($"Q:{question}");
+								await TranscribeAnswer(answer.Answer);
+
+							}
+						}
+						catch (Exception ex)
+						{
+							//Incase there is an error
+						}
+						break;
+					case "2":
+						Console.WriteLine("Ask me something");
+						question = Console.ReadLine();
+						try
+						{
+							//Check if there is a response
+							Response<AnswersResult> response = qnaClient.GetAnswers(question, project);
+							foreach (KnowledgeBaseAnswer answer in response.Value.Answers)
+							{
+								Console.WriteLine($"Q:{question}");
+								await TranscribeAnswer(answer.Answer);
+
+							}
+						}
+						catch (Exception ex)
+						{
+							//Incase there is an error
+						}
 						
-					}
+						break;
+					case "3":
+						question = "quit";
+						break;
+					default:
+						break;
 				}
-				catch (Exception ex)
-				{
 					
-				}
+				
 			}
 		}
 		static async Task<string> TranscribeQuestionFromMic(string question)
 		{
+			//Speech input
 			string micQuestion = "";
 			using AudioConfig audioConfig = AudioConfig.FromDefaultMicrophoneInput();
 			using SpeechRecognizer speechRecognizer = new SpeechRecognizer(speechConfig, audioConfig);
@@ -77,6 +118,7 @@ namespace Labb1_nlp
 		}
 		static async Task TranscribeAnswer(string answer)
 		{
+			//Speech output
 			Console.WriteLine(answer);
 			string responseText = answer;
 			using AudioConfig audioConfig = AudioConfig.FromDefaultMicrophoneInput();
